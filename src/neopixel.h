@@ -87,6 +87,7 @@ class Adafruit_NeoPixel {
     setColor(uint16_t aLedNumber, byte aRed, byte aGreen, byte aBlue, byte aWhite),
     setColorScaled(uint16_t aLedNumber, byte aRed, byte aGreen, byte aBlue, byte aScaling),
     setColorScaled(uint16_t aLedNumber, byte aRed, byte aGreen, byte aBlue, byte aWhite, byte aScaling),
+    setColorScaled(uint16_t aLedNumber, uint32_t c, byte aScaling),
     setColorDimmed(uint16_t aLedNumber, byte aRed, byte aGreen, byte aBlue, byte aBrightness),
     setColorDimmed(uint16_t aLedNumber, byte aRed, byte aGreen, byte aBlue, byte aWhite, byte aBrightness),
     updateLength(uint16_t n),

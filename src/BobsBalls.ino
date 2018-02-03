@@ -1,230 +1,241 @@
-/*
- * This is a minimal example, see extra-examples.cpp for a version
- * with more explantory documentation, example routines, how to
- * hook up your pixels and all of the pixel types that are supported.
- *
- */
- /*
-  * This is a RGB+W NeoPixel example, see extra-examples.cpp for a version
-  * with more explantory documentation, example routines, how to
-  * hook up your pixels and all of the pixel types that are supported.
-  *
-  */
+#include "Particle.h"
+#include "neopixel.h"
 
- /* ======================= includes ================================= */
+SYSTEM_MODE(AUTOMATIC);
 
- #include "Particle.h"
- #include "neopixel.h"
- #include "pattern.h"
- #include "rainbow.h"
- //#include "whiteOverRainbow.h"
+// IMPORTANT: Set pixel COUNT, PIN and TYPE
+#define PIXEL_PIN D2
+#define PIXEL_COUNT 100
+#define PIXEL_TYPE WS2812B
 
- /* ======================= prototypes =============================== */
+Adafruit_NeoPixel strip(PIXEL_COUNT, PIXEL_PIN, PIXEL_TYPE);
 
- uint32_t wheel(byte WheelPos);
- uint8_t red(uint32_t c);
- uint8_t green(uint32_t c);
- uint8_t blue(uint32_t c);
- void colorWipe(uint32_t c, uint8_t wait);
- void pulseWhite(uint8_t wait);
- void rainbowFade2White(uint8_t wait, int rainbowLoops, int whiteLoops);
- //void whiteOverRainbow(uint8_t wait, uint8_t whiteSpeed, uint8_t whiteLength);
- void fullWhite();
- void rainbowCycle(uint8_t wait);
- void rainbow(uint8_t wait);
+// Prototypes for local build, ok to leave in for Build IDE
+void rainbow(uint8_t wait);
+uint32_t Wheel(byte WheelPos);
 
- Pattern* m_pat = NULL;
-
- // ======================= rgbw-strandtest.cpp ======================
-
- SYSTEM_MODE(AUTOMATIC);
-
- // IMPORTANT: Set pixel COUNT, PIN and TYPE
- #define PIXEL_PIN D2
- #define PIXEL_COUNT 50
- #define PIXEL_TYPE WS2811
- #define BRIGHTNESS 50 // 0 - 255
-
- Adafruit_NeoPixel m_strip(PIXEL_COUNT, PIXEL_PIN, PIXEL_TYPE);
-
- int gamma[] = {
-     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  1,  1,  1,
-     1,  1,  1,  1,  1,  1,  1,  1,  1,  2,  2,  2,  2,  2,  2,  2,
-     2,  3,  3,  3,  3,  3,  3,  3,  4,  4,  4,  4,  4,  5,  5,  5,
-     5,  6,  6,  6,  6,  7,  7,  7,  7,  8,  8,  8,  9,  9,  9, 10,
-    10, 10, 11, 11, 11, 12, 12, 13, 13, 13, 14, 14, 15, 15, 16, 16,
-    17, 17, 18, 18, 19, 19, 20, 20, 21, 21, 22, 22, 23, 24, 24, 25,
-    25, 26, 27, 27, 28, 29, 29, 30, 31, 32, 32, 33, 34, 35, 35, 36,
-    37, 38, 39, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 50,
-    51, 52, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 66, 67, 68,
-    69, 70, 72, 73, 74, 75, 77, 78, 79, 81, 82, 83, 85, 86, 87, 89,
-    90, 92, 93, 95, 96, 98, 99,101,102,104,105,107,109,110,112,114,
-   115,117,119,120,122,124,126,127,129,131,133,135,137,138,140,142,
-   144,146,148,150,152,154,156,158,160,162,164,167,169,171,173,175,
-   177,180,182,184,186,189,191,193,196,198,200,203,205,208,210,213,
-   215,218,220,223,225,228,231,233,236,239,241,244,247,249,252,255 };
-
- void setup() {
-   m_strip.setBrightness(BRIGHTNESS);
-   m_strip.begin();
-   m_strip.show(); // Initialize all pixels to 'off'
-   // Warning
-   // Warning function name is limited to 12 characters
-   // Warning
-   Particle.function("choosePat",choosePattern);
-   m_pat = new Rainbow( m_strip, 500 );
- }
-
-int choosePattern(String command) {
-  // I suspect I can pass multi parameters here in the string, so I need to understand pattern, or use a json object stringified
-  if ( command == "Rainbow")
-    m_pat = new Rainbow( m_strip, 500 );
-//  else
-//    m_pat = new WhiteOverRainbow( m_strip, 20,75,5 );
-  return 1;
+void setup()
+{
+  Particle.publish( "BobsBalls.setup - 10:25AM - Chasing" );
+  strip.begin();
+  strip.setBrightness( 64 );
+  strip.show();
 }
 
- void loop() {
-   m_pat->update();
-   // Some example procedures showing how to display to the pixels:
-   // Do not run more than 15 seconds of these, or the b/g tasks
-   // will be blocked.
-   // --------------------------------------------------------------
-   //colorWipe(m_strip.Color(255, 0, 0), 50); // Red
-   //colorWipe(m_strip.Color(0, 255, 0), 50); // Green
-   //colorWipe(m_strip.Color(0, 0, 255), 50); // Blue
-   //colorWipe(m_strip.Color(0, 0, 0, 255), 50); // White
+// NOTE Instantaneous vs OverTime
+// A pattern is a set of transformations executed over time
+// Lets say a rampUp is one time element,
+// another time element is a spiral
+// how do we run both elements at the same time?
+// So elements which act on all pixels must execute first
+// I could create a list of elements and sort them by type
 
-   //pulseWhite(5);
+// NOTE linear vs small triangles vs large triangles vs hexagonal
+// ???
+static const uint32_t BLACK =   Adafruit_NeoPixel::Color( 0  , 0  , 0   );
+static const uint32_t GREEN =   Adafruit_NeoPixel::Color( 255, 0  , 0   );
+static const uint32_t RED =     Adafruit_NeoPixel::Color( 0  , 255, 0   );
+static const uint32_t BLUE =    Adafruit_NeoPixel::Color( 0  , 0  , 255 );
 
-   // fullWhite();
-   // delay(2000);
+void circulatingTriangles() {
+  uint8_t index = 5;
+  for( uint8_t j = 1; j <= 5; j++ ) {
+    for ( uint8_t i = 0; i < 3; i++ ) {
+      setColorGlobal( BLACK );
+      if ( j < 5 ) {
+        if ( i < 2 ) {
+          strip.setPixelColor( j, RED );
+          strip.setPixelColor( j + index + i, RED );
+          strip.setPixelColor( j + index + i + 1, RED );
+        } else {
+          strip.setPixelColor( j, RED );
+          strip.setPixelColor( j + index + i, RED );
+          strip.setPixelColor( j + 1, RED );
+          index++;
+        }
+      } else {
+        if ( i == 0 ) {
+          strip.setPixelColor( j, RED );
+          strip.setPixelColor( j + index + i, RED );
+          strip.setPixelColor( j + index + i + 1, RED );
+        } else if ( i == 1 ) {
+          strip.setPixelColor( j, RED );
+          strip.setPixelColor( j + index + i, RED );
+          strip.setPixelColor( j + 1, RED );
+        } else if ( i == 2 ) {
+          strip.setPixelColor( j, RED );
+          strip.setPixelColor( j + 1, RED );
+          strip.setPixelColor( 1, RED );
+        }
+      }
+      strip.show();
+      delay(500);
+    }
+  }
+}
 
-   //rainbowFade2White(3,3,1);
- }
+void rampUp( uint8_t r, uint8_t g, uint8_t b, uint8_t a = 127, uint16_t wait = 50 ) {
+  uint16_t j;
 
- uint8_t red(uint32_t c) {
-   return (c >> 8);
- }
- uint8_t green(uint32_t c) {
-   return (c >> 16);
- }
- uint8_t blue(uint32_t c) {
-   return (c);
- }
-
- // Fill the dots one after the other with a color
- void colorWipe(uint32_t c, uint8_t wait) {
-   for(uint16_t i=0; i<m_strip.numPixels(); i++) {
-     m_strip.setPixelColor(i, c);
-     m_strip.show();
-     delay(wait);
-   }
- }
-
- void pulseWhite(uint8_t wait) {
-   for(int j = 0; j < 256 ; j++) {
-     for(uint16_t i=0; i<m_strip.numPixels(); i++) {
-       m_strip.setPixelColor(i, m_strip.Color(0,0,0, gamma[j] ) );
-     }
-     delay(wait);
-     m_strip.show();
-   }
-
-   for(int j = 255; j >= 0 ; j--){
-     for(uint16_t i=0; i<m_strip.numPixels(); i++) {
-       m_strip.setPixelColor(i, m_strip.Color(0,0,0, gamma[j] ) );
-     }
-     delay(wait);
-     m_strip.show();
-   }
- }
+  for(j=0; j<a; j++) {
+    setColorGlobal( j*g/a, j*r/a, j*b/a );
+    strip.show();
+    delay(wait);
+  }
+}
 
 
- void rainbowFade2White(uint8_t wait, int rainbowLoops, int whiteLoops) {
-   float fadeMax = 100.0;
-   int fadeVal = 0;
-   uint32_t wheelVal;
-   int redVal, greenVal, blueVal;
+void setColorGlobal( uint8_t r, uint8_t g, uint8_t b ) {
+  for(uint16_t i=0; i<strip.numPixels(); i++)
+    strip.setPixelColor( i, 0, 0, 0 );
+}
 
-   for(int k = 0 ; k < rainbowLoops ; k ++) {
-     for(int j=0; j<256; j++) { // 5 cycles of all colors on wheel
-       for(int i=0; i< m_strip.numPixels(); i++) {
-         wheelVal = wheel(((i * 256 / m_strip.numPixels()) + j) & 255);
+void setColorGlobal( uint32_t c ) {
+  for(uint16_t i=0; i<strip.numPixels(); i++)
+    strip.setPixelColor( i, c );
+}
 
-         redVal = red(wheelVal) * float(fadeVal/fadeMax);
-         greenVal = green(wheelVal) * float(fadeVal/fadeMax);
-         blueVal = blue(wheelVal) * float(fadeVal/fadeMax);
+bool m_initialized = false;
+void lines() {
+  if ( m_initialized ){
+    return;
+  }
+  m_initialized = true;
+  strip.setBrightness( 32 );
+  uint32_t color = Adafruit_NeoPixel::Color( 0, 255, 0 );
+  uint16_t i, j;
+  setColorGlobal( 0 );
+  strip.setPixelColor( 0, color );
+  strip.setPixelColor( 6, color );
+  strip.setPixelColor( 17, color );
+  strip.setPixelColor( 33, color );
 
-         m_strip.setPixelColor( i, m_strip.Color( redVal, greenVal, blueVal ) );
-       }
+  strip.setPixelColor( 1, color );
+  strip.setPixelColor( 8, color );
+  strip.setPixelColor( 20, color );
+  strip.setPixelColor( 37, color );
 
-       // First loop, fade in!
-       if(k == 0 && fadeVal < fadeMax-1) {
-         fadeVal++;
-       }
-       // Last loop, fade out!
-       else if(k == rainbowLoops - 1 && j > 255 - fadeMax ) {
-         fadeVal--;
-       }
+  strip.setPixelColor( 2, color );
+  strip.setPixelColor( 10, color );
+  strip.setPixelColor( 23, color );
+  strip.setPixelColor( 41, color );
 
-       m_strip.show();
-       delay(wait);
-     }
-   }
+  strip.setPixelColor( 3, color );
+  strip.setPixelColor( 12, color );
+  strip.setPixelColor( 26, color );
+  strip.setPixelColor( 45, color );
 
-   delay(500);
+  strip.setPixelColor( 4, color );
+  strip.setPixelColor( 14, color );
+  strip.setPixelColor( 29, color );
+  strip.setPixelColor( 49, color );
 
-   for(int k = 0 ; k < whiteLoops ; k ++) {
-     for(int j = 0; j < 256 ; j++) {
-       for(uint16_t i=0; i < m_strip.numPixels(); i++) {
-         m_strip.setPixelColor(i, m_strip.Color(0,0,0, gamma[j] ) );
-       }
-       m_strip.show();
-     }
+  strip.setPixelColor( 99, color );
+  strip.setPixelColor( 93, color );
+  strip.setPixelColor( 82, color );
+  strip.setPixelColor( 67, color );
 
-     delay(2000);
-     for(int j = 255; j >= 0 ; j--) {
-       for(uint16_t i=0; i < m_strip.numPixels(); i++) {
-         m_strip.setPixelColor(i, m_strip.Color(0,0,0, gamma[j] ) );
-       }
-       m_strip.show();
-     }
-   }
+  strip.setPixelColor( 98, color );
+  strip.setPixelColor( 91, color );
+  strip.setPixelColor( 79, color );
+  strip.setPixelColor( 63, color );
 
-   delay(500);
- }
+  strip.setPixelColor( 97, color );
+  strip.setPixelColor( 89, color );
+  strip.setPixelColor( 76, color );
+  strip.setPixelColor( 59, color );
 
- void fullWhite() {
-   for(uint16_t i=0; i<m_strip.numPixels(); i++) {
-     m_strip.setPixelColor(i, m_strip.Color(0,0,0, 255 ) );
-   }
-   m_strip.show();
- }
+  strip.setPixelColor( 96, color );
+  strip.setPixelColor( 87, color );
+  strip.setPixelColor( 73, color );
+  strip.setPixelColor( 55, color );
 
- // Slightly different, this makes the rainbow equally distributed throughout
- void rainbowCycle(uint8_t wait) {
+  strip.setPixelColor( 95, color );
+  strip.setPixelColor( 85, color );
+  strip.setPixelColor( 70, color );
+  strip.setPixelColor( 51, color );
+
+  strip.show();
+  delay(500);
+}
+
+
+void singleSpiral( uint32_t color, uint16_t wait = 50 ) {
+  strip.setBrightness( 255 );
+  uint16_t i, j;
+  for(j=0; j<strip.numPixels(); j++) {
+    setColorGlobal( 0 );
+    //setColorScaled(uint16_t aLedNumber, byte aRed, byte aGreen, byte aBlue, byte aScaling) {
+    if ( j-3 >= 0 )
+      strip.setColorScaled( j-2, color, 8 );
+    if ( j-2 >= 0 )
+      strip.setColorScaled( j-2, color, 16 );
+    if ( j-1 >= 0 )
+      strip.setColorScaled( j-1, color, 32 );
+    strip.setPixelColor( j, color );
+    strip.show();
+    delay(wait);
+  }
+}
+
+void reverseSingleSpiral( uint32_t color, uint16_t wait = 50 ) {
+  for( int16_t j = strip.numPixels(); j>=0; j--) {
+    setColorGlobal( 0 );
+    //setColorScaled(uint16_t aLedNumber, byte aRed, byte aGreen, byte aBlue, byte aScaling) {
+    // if ( j-3 >= 0 )
+    //   strip.setColorScaled( j-2, color, 8 );
+    // if ( j-2 >= 0 )
+    //   strip.setColorScaled( j-2, color, 16 );
+    // if ( j-1 >= 0 )
+    //   strip.setColorScaled( j-1, color, 32 );
+    strip.setPixelColor( j, color );
+    strip.show();
+    delay(wait);
+  }
+}
+
+ void pingPong() {
    uint16_t i, j;
-
-   for(j=0; j<256 * 5; j++) { // 5 cycles of all colors on wheel
-     for(i=0; i< m_strip.numPixels(); i++) {
-       m_strip.setPixelColor(i, wheel(((i * 256 / m_strip.numPixels()) + j) & 255));
+//   for(j=0; j<256; j++) {
+     for(i=0; i<strip.numPixels(); i++) {
+       uint32_t color = Wheel((i+j) & 255);
+       reverseSingleSpiral( color, 10 );
+       singleSpiral( color, 10 );
      }
-     m_strip.show();
-     delay(wait);
-   }
+//   }
  }
-/*
+void loop() {
+  //setColorGlobal( 0 );
+  //strip.show();
+  //pingPong();
+  lines();
+  strip.show();
+  //circulatingTriangles();
+  //rainbow( 25 );
+}
+
 void rainbow(uint8_t wait) {
   uint16_t i, j;
 
   for(j=0; j<256; j++) {
-    for(i=0; i<m_strip.numPixels(); i++) {
-      m_strip.setPixelColor(i, wheel((i+j) & 255));
+    for(i=0; i<strip.numPixels(); i++) {
+      strip.setPixelColor(i, Wheel((i+j) & 255));
     }
-    m_strip.show();
+    strip.show();
     delay(wait);
   }
 }
-*/
+
+// Input a value 0 to 255 to get a color value.
+// The colours are a transition r - g - b - back to r.
+uint32_t Wheel(byte WheelPos) {
+  if(WheelPos < 85) {
+   return strip.Color(WheelPos * 3, 255 - WheelPos * 3, 0);
+  } else if(WheelPos < 170) {
+   WheelPos -= 85;
+   return strip.Color(255 - WheelPos * 3, 0, WheelPos * 3);
+  } else {
+   WheelPos -= 170;
+   return strip.Color(0, WheelPos * 3, 255 - WheelPos * 3);
+  }
+}

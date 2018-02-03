@@ -935,6 +935,17 @@ void Adafruit_NeoPixel::setColorScaled(uint16_t aLedNumber, byte aRed, byte aGre
   setColor(aLedNumber, (aRed*aScaling)>>8, (aGreen*aScaling)>>8, (aBlue*aScaling)>>8, (aWhite*aScaling)>>8);
 }
 
+void Adafruit_NeoPixel::setColorScaled(uint16_t aLedNumber, uint32_t c, byte aScaling) {
+  uint8_t
+    w = (uint8_t)(c >> 24),
+    r = (uint8_t)(c >> 16),
+    g = (uint8_t)(c >>  8),
+    b = (uint8_t)c;
+
+  // scale RGB with a common brightness parameter
+  setColor(aLedNumber, (r*aScaling)>>8, (g*aScaling)>>8, (b*aScaling)>>8, (w*aScaling)>>8);
+}
+
 void Adafruit_NeoPixel::setColorDimmed(uint16_t aLedNumber, byte aRed, byte aGreen, byte aBlue, byte aBrightness) {
   setColorScaled(aLedNumber, aRed, aGreen, aBlue, brightnessToPWM(aBrightness));
 }
