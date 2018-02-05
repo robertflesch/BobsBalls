@@ -6,12 +6,12 @@
 using namespace std;
 
 TEST_CASE("path to string") {
-  REQUIRE(bb::to_string(graph[0]) == "{9,6,7}");
-  REQUIRE(bb::to_string(graph[5]) == "{4,1,2,6,9,8}");
+  REQUIRE(bb::to_string(simple_graph[0]) == "{9,6,7}");
+  REQUIRE(bb::to_string(simple_graph[5]) == "{4,1,2,6,9,8}");
 }
 
 TEST_CASE("graph to string") {
-  REQUIRE(bb::to_string(graph) == "{"
+  REQUIRE(bb::to_string(simple_graph) == "{"
       "{9,6,7},"
       "{2,5,4},"
       "{1,3,6,5},"

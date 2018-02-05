@@ -29,6 +29,8 @@ namespace bb {
    * @return the LED (index) associated with the neighbors.
    */
   led_t led_of(const graph_t &graph, const path_t &neigbors);
+
+
 }
 
 #endif
