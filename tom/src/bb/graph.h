@@ -1,36 +1,40 @@
-#ifndef BB_GRAPH_H
-#define BB_GRAPH_H
+#ifndef GRAPH_GRAPH_H
+#define GRAPH_GRAPH_H
 
 #include <vector>
-#include <cstdint>
-
-namespace bb {
-
-  /** The LED identifier used to send instructions. */
-  typedef uint16_t led_t;
-
-  /** An ordered path of LEDs */
-  typedef std::vector<led_t> path_t;
-
-  /**
-   * A graph of LEDs - the index of the vector is the LED, the path it's neighbors,
-   * starting with the west neighbor and proceeding clockwise.
-   */
-  typedef std::vector<path_t> graph_t;
-
-  /**
-   * The graph of LEDs on a Bob ball.
-   */
-  extern const graph_t bob_ball;
-
-  /**
-   * @param graph
-   * @param neigbors - must be from the graph.
-   * @return the LED (index) associated with the neighbors.
-   */
-  led_t led_of(const graph_t &graph, const path_t &neigbors);
+//#include <cstdint>
 
 
-}
+typedef uint8_t path_t[6];
+typedef uint8_t graph_t[52][6];
 
-#endif
+extern const graph_t ball;
+//extern const int ball_size;
+
+//class led_neigborhood {
+//    const led_t* const begin;
+//    const led_t* const end;
+//    const led_t* current;
+//
+//public:
+//
+//    explicit led_neigborhood(path_t& path) : begin(path), current(begin), end(path + (path[5] == 0xff ? 5 : 6)) {}
+//
+//    led_neigborhood(const led_neigborhood &that) : begin(that.begin), current(that.current), end(that.end) {}
+//
+//    led_neigborhood &operator++() {
+//        return *this;
+//    }
+//
+//    led_neigborhood operator++(int) {
+//        led_neigborhood old_value(*this);
+//        ++(*this);
+//        return old_value;
+//    }
+//
+//    uint8_t &operator*() { return *current; }
+//};
+
+
+
+#endif //GRAPH_GRAPH_H
