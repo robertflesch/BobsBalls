@@ -6,7 +6,7 @@
 
 
 typedef uint8_t path_t[6];
-typedef uint8_t graph_t[52][6];
+typedef uint8_t graph_t[142][6];
 
 extern const graph_t ball;
 //extern const int ball_size;
